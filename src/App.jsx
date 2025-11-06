@@ -1,28 +1,24 @@
 import React, { useState, useEffect } from "react";
 
-// COLORS and FONT
+// ---- SheetDB endpoints ----
+const USERS_URL = "https://sheetdb.io/api/v1/g3j7bkgfvrz4q?sheet=Users";
+const CENTERS_URL = "https://sheetdb.io/api/v1/g3j7bkgfvrz4q";
+const ENTRIES_URL = "https://sheetdb.io/api/v1/imirhe608ptj9";
+
+// ---- UI Constants ----
 const COLORS = {
   yellow: "#FFEC00",
   blue: "#1991EB",
   pink: "#F96FB7",
   purple: "#9D4BE6",
-  white: "#ffffff",
-  border: "#E8EDEE",
-  infoBg: "#f4f7fd"
+  white: "#fff",
+  infoBg: "#f4f7fd",
 };
 const FONT = "'Quicksand', 'Nunito', 'Arial', sans-serif";
 
-// SheetDB endpoints
-const CENTERS_URL = "https://sheetdb.io/api/v1/g3j7bkgfvrz4q";
-const ENTRIES_URL = "https://sheetdb.io/api/v1/imirhe608ptj9";
-
-// Card layout
+// ---- UI Components ----
 function Card({ children }) {
-  return (
-    <div className="card">
-      {children}
-    </div>
-  );
+  return <div className="card">{children}</div>;
 }
 
 function FormField({ label, value, onChange, id }) {
@@ -42,16 +38,13 @@ function FormField({ label, value, onChange, id }) {
   );
 }
 
-function InfoBox({ center, student, Date of Birth, Start Date, Billing Cycle, Classroom}) {
+function InfoBox({ center, student, agreementDate, birthDate }) {
   return (
     <div className="info-box">
       <div><strong>Center Name:</strong> {center}</div>
       <div><strong>Student Name:</strong> {student}</div>
-      <div><strong>Date of Birth:</strong> {Date of Birth}</div>
-      <div><strong>Enroll Date:</strong> {Enroll Date}</div>
-      <div><strong>Start Date:</strong> {Start Date}</div>
-      <div><strong>Billing Cycle:</strong> {Billing Cycle}</div>
-      <div><strong>Classroom:</strong> {Classroom}</div>
+      <div><strong>Agreement Date:</strong> {agreementDate}</div>
+      <div><strong>Birth Date:</strong> {birthDate}</div>
     </div>
   );
 }
@@ -96,10 +89,17 @@ function EntriesTable({ entries, onEditClick }) {
   );
 }
 
+// ---- Main Application ----
 function App() {
+  // Login State
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [loginUser, setLoginUser] = useState("");
+  const [loginPass, setLoginPass] = useState("");
+  const [loginError, setLoginError] = useState("");
+  const [loginCenter, setLoginCenter] = useState("");
+
+  // App Flow State
   const [mode, setMode] = useState("menu");
-  const [centers, setCenters] = useState([]);
-  const [selectedCenter, setSelectedCenter] = useState("");
   const [students, setStudents] = useState([]);
   const [selectedStudent, setSelectedStudent] = useState("");
   const [studentData, setStudentData] = useState({});
@@ -110,61 +110,74 @@ function App() {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
-  useEffect(() => {
-    fetch(CENTERS_URL)
-      .then(res => res.json())
-      .then(data => setCenters([...new Set(data.map(row => row["Center Name"]))]));
-  }, []);
+  // ---- LOGIN LOGIC ----
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setLoginError("");
+    try {
+      const res = await fetch(`${USERS_URL}/search?Username=${encodeURIComponent(loginUser)}&Password=${encodeURIComponent(loginPass)}`);
+      const users = await res.json();
+      if (users.length === 1) {
+        setIsLoggedIn(true);
+        setLoginCenter(users[0]["Center Name"]);
+      } else {
+        setLoginError("Invalid username or password.");
+      }
+    } catch {
+      setLoginError("Could not connect to login server.");
+    }
+  };
 
+  // ---- Fetch Students for the Logged Center ----
   useEffect(() => {
-    if (mode === "enter" && selectedCenter) {
+    if (isLoggedIn) {
       fetch(CENTERS_URL)
         .then(res => res.json())
         .then(data => {
-          const filtered = data.filter(row => row["Center Name"] === selectedCenter);
+          const filtered = data.filter(row => row["Center Name"] === loginCenter);
           setStudents(filtered.map(row => row["Student Name"]));
         });
-    } else if (mode === "enter") {
-      setStudents([]);
-      setSelectedStudent("");
     }
-  }, [selectedCenter, mode]);
+  }, [isLoggedIn, loginCenter]);
 
+  // ---- Show Selected Student's Data ----
   useEffect(() => {
-    if (mode === "enter" && selectedStudent && selectedCenter) {
+    if (selectedStudent && loginCenter && isLoggedIn) {
       fetch(CENTERS_URL)
         .then(res => res.json())
         .then(data => {
-          const studentRow = data.find(
-            row => row["Center Name"] === selectedCenter && row["Student Name"] === selectedStudent);
+          const studentRow = data.find(row =>
+            row["Center Name"] === loginCenter && row["Student Name"] === selectedStudent
+          );
           setStudentData(studentRow || {});
         });
-    } else if (mode === "enter") {
+    } else {
       setStudentData({});
     }
-  }, [selectedStudent, selectedCenter, mode]);
+  }, [selectedStudent, loginCenter, isLoggedIn]);
 
+  // ---- Fetch Entries / Edit ----
   useEffect(() => {
-    if ((mode === "view" || mode === "edit") && selectedCenter) {
+    if ((mode === "view" || mode === "edit") && loginCenter && isLoggedIn) {
       fetch(ENTRIES_URL)
         .then(res => res.json())
         .then(data => {
-          const filteredEntries = data.filter(entry => entry["Center Name"] === selectedCenter);
+          const filteredEntries = data.filter(entry => entry["Center Name"] === loginCenter);
           setEntries(filteredEntries);
         })
         .catch(() => setEntries([]));
     } else if (mode === "view" || mode === "edit") {
       setEntries([]);
     }
-  }, [selectedCenter, mode]);
+  }, [loginCenter, mode, isLoggedIn]);
 
-  // Submit new entry
+  // ---- Submit New Entry ----
   const submitNewEntry = async (e) => {
     e.preventDefault();
     setSubmitting(true);
     const entry = {
       Timestamp: new Date().toISOString(),
-      "Center Name": selectedCenter,
+      "Center Name": loginCenter,
       "Student Name": selectedStudent,
       Field1: fields.field1,
       Field2: fields.field2,
@@ -180,13 +193,12 @@ function App() {
       });
       if (res.ok) {
         setFields({ field1: "", field2: "", field3: "", field4: "", field5: "" });
-        setSelectedCenter("");
         setSelectedStudent("");
         setStudentData({});
         setSubmitted(true);
         setTimeout(() => setSubmitted(false), 2000);
       } else {
-        alert("Could not submit to SheetDB.");
+        alert("Could not submit to server.");
       }
     } catch {
       alert("Network error—please check your internet/SheetDB setup.");
@@ -194,7 +206,7 @@ function App() {
     setSubmitting(false);
   };
 
-  // Begin editing entry
+  // ---- Edit Existing Entry ----
   const startEditEntry = (entry) => {
     setEditingEntryId(entry.Timestamp);
     setEditingFields({
@@ -204,14 +216,14 @@ function App() {
       Field4: entry.Field4 || "",
       Field5: entry.Field5 || ""
     });
+    setSelectedStudent(entry["Student Name"]);
   };
 
-  // Save edited entry (delete + add; update with SheetDB if possible)
   const saveEditedEntry = async () => {
     if (!editingEntryId) return;
     setSubmitting(true);
     try {
-      // 1. Delete old entry by Timestamp (unique identifier)
+      // 1. Delete previous entry by timestamp
       const deleteRes = await fetch(
         `${ENTRIES_URL}/search?Timestamp=${encodeURIComponent(editingEntryId)}`,
         { method: "DELETE" }
@@ -221,11 +233,11 @@ function App() {
         setSubmitting(false);
         return;
       }
-      // 2. Add new updated entry
+      // 2. Add updated entry
       const updatedEntry = {
         Timestamp: editingEntryId,
-        "Center Name": selectedCenter,
-        "Student Name": "", // TODO: Track the editing student if needed
+        "Center Name": loginCenter,
+        "Student Name": selectedStudent,
         Field1: editingFields.Field1,
         Field2: editingFields.Field2,
         Field3: editingFields.Field3,
@@ -244,10 +256,10 @@ function App() {
       }
       alert("Entry updated successfully!");
       setEditingEntryId(null);
-      // Reload entries for selected center
+      // Refresh entries
       const res = await fetch(ENTRIES_URL);
       const allEntries = await res.json();
-      const filtered = allEntries.filter(e => e["Center Name"] === selectedCenter);
+      const filtered = allEntries.filter(e => e["Center Name"] === loginCenter);
       setEntries(filtered);
     } catch (error) {
       alert("Error updating entry: " + error.message);
@@ -255,93 +267,101 @@ function App() {
     setSubmitting(false);
   };
 
+  // ---- LOGIN PAGE ----
+  if (!isLoggedIn) {
+    return (
+      <div className="login-container">
+        <form className="login-form" onSubmit={handleLogin}>
+          <h2>Center Login</h2>
+          <input
+            type="text"
+            placeholder="Username"
+            value={loginUser}
+            onChange={e => setLoginUser(e.target.value)}
+            required
+          />
+          <input
+            type="password"
+            placeholder="Password"
+            value={loginPass}
+            onChange={e => setLoginPass(e.target.value)}
+            required
+          />
+          <button type="submit">Login</button>
+          {loginError && <p className="error">{loginError}</p>}
+        </form>
+      </div>
+    );
+  }
+
+  // ---- MAIN APP ----
   return (
     <div className="app-main-container">
       <div className="app-header">
-        <img src="/logo.png"
-          alt="App Logo"
-          className="logo"
-          style={{ width: 180, borderRadius: 13, boxShadow: "0 2px 16px rgba(0,0,0,0.1)", marginBottom: 12 }} />
+        <img src="/logo.png" alt="App Logo" className="logo" style={{ width: 180, borderRadius: 13, boxShadow: "0 2px 16px rgba(0,0,0,0.1)", marginBottom: 12 }} />
         <h1 style={{ color: COLORS.purple, fontWeight: 900, margin: 0 }}>Deva Data Entry App</h1>
-        <p style={{ color: COLORS.blue, fontWeight: 600, marginTop: 6, fontSize: "1.1rem" }}>Corporate Student Information Portal</p>
+        <p style={{ color: COLORS.blue, fontWeight: 600, marginTop: 6, fontSize: "1.1rem" }}>
+          Welcome, {loginUser} ({loginCenter})
+        </p>
+        <button className="back-btn" style={{ float: "right", background: "#eee" }} onClick={() => { setIsLoggedIn(false); setLoginUser(""); setLoginPass(""); }}>Logout</button>
       </div>
 
       {mode === "menu" && (
         <Card>
           <h2 style={{ color: COLORS.purple, marginBottom: 20 }}>Select an option</h2>
-          <button onClick={() => { setMode("enter"); setSelectedCenter(""); setSelectedStudent(""); }} className="main-btn">Enter New Data</button>
-          <button onClick={() => { setMode("view"); setSelectedCenter(""); }} className="main-btn">View Data Entered</button>
-          <button onClick={() => { setMode("edit"); setSelectedCenter(""); }} className="main-btn">Edit Entries</button>
+          <button onClick={() => { setMode("enter"); setSelectedStudent(""); }} className="main-btn">Enter New Data</button>
+          <button onClick={() => { setMode("view"); }} className="main-btn">View Data Entered</button>
+          <button onClick={() => { setMode("edit"); }} className="main-btn">Edit Entries</button>
         </Card>
       )}
 
-      {/* ENTER NEW DATA MODE */}
-      {mode === "enter" && <>
-        <Card>
-          <button onClick={() => setMode("menu")} className="back-btn">← Back to Menu</button>
-          <h2 style={{ color: COLORS.purple, marginBottom: 20 }}>Step 1: Select Center</h2>
-          <select className="select-box" value={selectedCenter} onChange={e => setSelectedCenter(e.target.value)}>
-            <option value="">--Select a center--</option>
-            {centers.map(c => <option key={c} value={c}>{c}</option>)}
-          </select>
-        </Card>
-        {selectedCenter && <Card>
-          <h2 style={{ color: COLORS.purple, marginBottom: 20 }}>Step 2: Select Student</h2>
-          <select className="select-box" value={selectedStudent} onChange={e => setSelectedStudent(e.target.value)}>
-            <option value="">--Select a student--</option>
-            {students.map(s => <option key={s} value={s}>{s}</option>)}
-          </select>
-        </Card>}
-        {selectedStudent && <Card>
-          <h2 style={{ color: COLORS.purple, marginBottom: 20 }}>Step 3: Enter Data</h2>
-          <InfoBox
-            center={selectedCenter}
-            student={selectedStudent}
-            agreementDate={studentData["Agreement Date"]}
-            birthDate={studentData["Birth Date"]}
-          />
-          <form onSubmit={submitNewEntry}>
-            <FormField id="field1" label="Field 1" value={fields.field1} onChange={e => setFields(s => ({ ...s, field1: e.target.value }))} />
-            <FormField id="field2" label="Field 2" value={fields.field2} onChange={e => setFields(s => ({ ...s, field2: e.target.value }))} />
-            <FormField id="field3" label="Field 3" value={fields.field3} onChange={e => setFields(s => ({ ...s, field3: e.target.value }))} />
-            <FormField id="field4" label="Field 4" value={fields.field4} onChange={e => setFields(s => ({ ...s, field4: e.target.value }))} />
-            <FormField id="field5" label="Field 5" value={fields.field5} onChange={e => setFields(s => ({ ...s, field5: e.target.value }))} />
-            <button type="submit" disabled={submitting} className="main-btn">Submit Entry</button>
-          </form>
-        </Card>}
-      </>}
+      {/* ENTER MODE */}
+      {mode === "enter" && <Card>
+        <button onClick={() => setMode("menu")} className="back-btn">← Back to Menu</button>
+        <h2 style={{ color: COLORS.purple, marginBottom: 20 }}>Select Student</h2>
+        <select className="select-box" value={selectedStudent} onChange={e => setSelectedStudent(e.target.value)}>
+          <option value="">--Select a student--</option>
+          {students.map(s => <option key={s} value={s}>{s}</option>)}
+        </select>
+        {selectedStudent && (
+          <>
+            <InfoBox
+              center={loginCenter}
+              student={selectedStudent}
+              agreementDate={studentData["Agreement Date"]}
+              birthDate={studentData["Birth Date"]}
+            />
+            <form onSubmit={submitNewEntry}>
+              <FormField id="field1" label="Field 1" value={fields.field1} onChange={e => setFields(s => ({ ...s, field1: e.target.value }))} />
+              <FormField id="field2" label="Field 2" value={fields.field2} onChange={e => setFields(s => ({ ...s, field2: e.target.value }))} />
+              <FormField id="field3" label="Field 3" value={fields.field3} onChange={e => setFields(s => ({ ...s, field3: e.target.value }))} />
+              <FormField id="field4" label="Field 4" value={fields.field4} onChange={e => setFields(s => ({ ...s, field4: e.target.value }))} />
+              <FormField id="field5" label="Field 5" value={fields.field5} onChange={e => setFields(s => ({ ...s, field5: e.target.value }))} />
+              <button type="submit" disabled={submitting} className="main-btn">Submit Entry</button>
+            </form>
+          </>
+        )}
+      </Card>}
 
-      {/* VIEW DATA MODE */}
+      {/* VIEW MODE */}
       {mode === "view" && <Card>
         <button onClick={() => setMode("menu")} className="back-btn">← Back to Menu</button>
         <h2 style={{ color: COLORS.purple, marginBottom: 20 }}>View Data Entered</h2>
-        <select className="select-box" value={selectedCenter} onChange={e => setSelectedCenter(e.target.value)}>
-          <option value="">--Select a center to view entries--</option>
-          {centers.map(c => <option key={c} value={c}>{c}</option>)}
-        </select>
-        {selectedCenter && <EntriesTable entries={entries} />}
+        <EntriesTable entries={entries} />
       </Card>}
 
-      {/* EDIT ENTRIES MODE */}
-      {mode === "edit" && <>
-        <Card>
-          <button onClick={() => setMode("menu")} className="back-btn">← Back to Menu</button>
-          <h2 style={{ color: COLORS.purple, marginBottom: 20 }}>Edit Entries</h2>
-          <select className="select-box" value={selectedCenter} onChange={e => setSelectedCenter(e.target.value)}>
-            <option value="">--Select a center to edit entries--</option>
-            {centers.map(c => <option key={c} value={c}>{c}</option>)}
-          </select>
-        </Card>
-        {selectedCenter && !editingEntryId && (
-          <Card>
-            <EntriesTable
-              entries={entries}
-              onEditClick={startEditEntry} />
-          </Card>
-        )}
-        {editingEntryId && (
-          <Card>
-            <h2 style={{ color: COLORS.purple, marginBottom: 20 }}>Editing Entry {editingEntryId}</h2>
+      {/* EDIT MODE */}
+      {mode === "edit" && <Card>
+        <button onClick={() => setMode("menu")} className="back-btn">← Back to Menu</button>
+        <h2 style={{ color: COLORS.purple, marginBottom: 20 }}>Edit Entries</h2>
+        {!editingEntryId ? (
+          <EntriesTable
+            entries={entries}
+            onEditClick={startEditEntry}
+          />
+        ) : (
+          <>
+            <h4>Editing: {selectedStudent}</h4>
             <FormField id="edit-field1" label="Field 1" value={editingFields.Field1} onChange={e => setEditingFields(f => ({ ...f, Field1: e.target.value }))} />
             <FormField id="edit-field2" label="Field 2" value={editingFields.Field2} onChange={e => setEditingFields(f => ({ ...f, Field2: e.target.value }))} />
             <FormField id="edit-field3" label="Field 3" value={editingFields.Field3} onChange={e => setEditingFields(f => ({ ...f, Field3: e.target.value }))} />
@@ -349,9 +369,9 @@ function App() {
             <FormField id="edit-field5" label="Field 5" value={editingFields.Field5} onChange={e => setEditingFields(f => ({ ...f, Field5: e.target.value }))} />
             <button onClick={saveEditedEntry} disabled={submitting} className="main-btn">Save Changes</button>
             <button onClick={() => setEditingEntryId(null)} className="back-btn">Cancel</button>
-          </Card>
+          </>
         )}
-      </>}
+      </Card>}
 
       {/* Success popup */}
       {submitted && <div className="submitted-popup">✅ Entry Submitted!</div>}
