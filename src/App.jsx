@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from "react";
 
-// ---- SheetDB endpoints ----
-const USERS_URL = "https://sheetdb.io/api/v1/g3j7bkgfvrz4q?sheet=Users";
+// SheetDB endpoints (no ?sheet=Users in USERS_URL)
+const USERS_URL = "https://sheetdb.io/api/v1/g3j7bkgfvrz4q";
 const CENTERS_URL = "https://sheetdb.io/api/v1/g3j7bkgfvrz4q";
 const ENTRIES_URL = "https://sheetdb.io/api/v1/imirhe608ptj9";
 
-// ---- UI Constants ----
 const COLORS = {
   yellow: "#FFEC00",
   blue: "#1991EB",
@@ -16,11 +15,8 @@ const COLORS = {
 };
 const FONT = "'Quicksand', 'Nunito', 'Arial', sans-serif";
 
-// ---- UI Components ----
-function Card({ children }) {
-  return <div className="card">{children}</div>;
-}
-
+// UI helpers...
+function Card({ children }) { return <div className="card">{children}</div>; }
 function FormField({ label, value, onChange, id }) {
   return (
     <div style={{ marginBottom: 20 }}>
@@ -37,7 +33,6 @@ function FormField({ label, value, onChange, id }) {
     </div>
   );
 }
-
 function InfoBox({ center, student, agreementDate, birthDate }) {
   return (
     <div className="info-box">
@@ -48,7 +43,6 @@ function InfoBox({ center, student, agreementDate, birthDate }) {
     </div>
   );
 }
-
 function EntriesTable({ entries, onEditClick }) {
   if (!entries.length) return <p>No entries found for this center.</p>;
   return (
@@ -89,16 +83,13 @@ function EntriesTable({ entries, onEditClick }) {
   );
 }
 
-// ---- Main Application ----
 function App() {
-  // Login State
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loginUser, setLoginUser] = useState("");
   const [loginPass, setLoginPass] = useState("");
   const [loginError, setLoginError] = useState("");
   const [loginCenter, setLoginCenter] = useState("");
 
-  // App Flow State
   const [mode, setMode] = useState("menu");
   const [students, setStudents] = useState([]);
   const [selectedStudent, setSelectedStudent] = useState("");
@@ -110,25 +101,36 @@ function App() {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
-  // ---- LOGIN LOGIC ----
+  // LOGIN: search must include &sheet=Users
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoginError("");
     try {
-      const res = await fetch(`${USERS_URL}/search?Username=${encodeURIComponent(loginUser)}&Password=${encodeURIComponent(loginPass)}`);
+      const url = `${USERS_URL}/search?Username=${encodeURIComponent(loginUser)}&Password=${encodeURIComponent(loginPass)}&sheet=Users`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("SheetDB error");
       const users = await res.json();
+
+      console.log("Login attempt:", { loginUser, loginPass, users }); // Debug
+
+      if (!Array.isArray(users)) {
+        setLoginError("ERROR: SheetDB endpoint/sheet names/headers may be wrong.");
+        return;
+      }
       if (users.length === 1) {
         setIsLoggedIn(true);
         setLoginCenter(users[0]["Center Name"]);
+      } else if (users.length > 1) {
+        setLoginError("Multiple users found. Check for duplicate usernames.");
       } else {
         setLoginError("Invalid username or password.");
       }
-    } catch {
-      setLoginError("Could not connect to login server.");
+    } catch (err) {
+      setLoginError("Could not connect to login server or endpoint misconfiguration.");
     }
   };
 
-  // ---- Fetch Students for the Logged Center ----
+  // Students for logged-in center
   useEffect(() => {
     if (isLoggedIn) {
       fetch(CENTERS_URL)
@@ -140,7 +142,7 @@ function App() {
     }
   }, [isLoggedIn, loginCenter]);
 
-  // ---- Show Selected Student's Data ----
+  // Student data
   useEffect(() => {
     if (selectedStudent && loginCenter && isLoggedIn) {
       fetch(CENTERS_URL)
@@ -156,7 +158,7 @@ function App() {
     }
   }, [selectedStudent, loginCenter, isLoggedIn]);
 
-  // ---- Fetch Entries / Edit ----
+  // Entries for logged in center
   useEffect(() => {
     if ((mode === "view" || mode === "edit") && loginCenter && isLoggedIn) {
       fetch(ENTRIES_URL)
@@ -171,7 +173,7 @@ function App() {
     }
   }, [loginCenter, mode, isLoggedIn]);
 
-  // ---- Submit New Entry ----
+  // New entry
   const submitNewEntry = async (e) => {
     e.preventDefault();
     setSubmitting(true);
@@ -206,7 +208,7 @@ function App() {
     setSubmitting(false);
   };
 
-  // ---- Edit Existing Entry ----
+  // Edit entry
   const startEditEntry = (entry) => {
     setEditingEntryId(entry.Timestamp);
     setEditingFields({
@@ -223,7 +225,6 @@ function App() {
     if (!editingEntryId) return;
     setSubmitting(true);
     try {
-      // 1. Delete previous entry by timestamp
       const deleteRes = await fetch(
         `${ENTRIES_URL}/search?Timestamp=${encodeURIComponent(editingEntryId)}`,
         { method: "DELETE" }
@@ -233,7 +234,6 @@ function App() {
         setSubmitting(false);
         return;
       }
-      // 2. Add updated entry
       const updatedEntry = {
         Timestamp: editingEntryId,
         "Center Name": loginCenter,
@@ -256,7 +256,6 @@ function App() {
       }
       alert("Entry updated successfully!");
       setEditingEntryId(null);
-      // Refresh entries
       const res = await fetch(ENTRIES_URL);
       const allEntries = await res.json();
       const filtered = allEntries.filter(e => e["Center Name"] === loginCenter);
@@ -267,7 +266,7 @@ function App() {
     setSubmitting(false);
   };
 
-  // ---- LOGIN PAGE ----
+  // Login Page
   if (!isLoggedIn) {
     return (
       <div className="login-container">
@@ -288,13 +287,22 @@ function App() {
             required
           />
           <button type="submit">Login</button>
-          {loginError && <p className="error">{loginError}</p>}
+          {loginError && <p className="error" style={{fontWeight:700}}>{loginError}</p>}
         </form>
+        <div style={{marginTop:16, fontSize:"0.98em"}}>
+          <b>Debug Help:</b>
+          <ul style={{textAlign:"left"}}>
+            <li>Use correct endpoint. No <b>?sheet=Users</b> in USERS_URL.</li>
+            <li>Login logic appends <b>&sheet=Users</b> in search.</li>
+            <li>Column headers must be <b>Username</b>, <b>Password</b>.</li>
+            <li>Check spelling/case of sheet tab and headers.</li>
+          </ul>
+        </div>
       </div>
     );
   }
 
-  // ---- MAIN APP ----
+  // Main App
   return (
     <div className="app-main-container">
       <div className="app-header">
@@ -315,7 +323,6 @@ function App() {
         </Card>
       )}
 
-      {/* ENTER MODE */}
       {mode === "enter" && <Card>
         <button onClick={() => setMode("menu")} className="back-btn">← Back to Menu</button>
         <h2 style={{ color: COLORS.purple, marginBottom: 20 }}>Select Student</h2>
@@ -343,14 +350,12 @@ function App() {
         )}
       </Card>}
 
-      {/* VIEW MODE */}
       {mode === "view" && <Card>
         <button onClick={() => setMode("menu")} className="back-btn">← Back to Menu</button>
         <h2 style={{ color: COLORS.purple, marginBottom: 20 }}>View Data Entered</h2>
         <EntriesTable entries={entries} />
       </Card>}
 
-      {/* EDIT MODE */}
       {mode === "edit" && <Card>
         <button onClick={() => setMode("menu")} className="back-btn">← Back to Menu</button>
         <h2 style={{ color: COLORS.purple, marginBottom: 20 }}>Edit Entries</h2>
@@ -372,8 +377,6 @@ function App() {
           </>
         )}
       </Card>}
-
-      {/* Success popup */}
       {submitted && <div className="submitted-popup">✅ Entry Submitted!</div>}
     </div>
   );
