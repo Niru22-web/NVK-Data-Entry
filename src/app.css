@@ -1,0 +1,289 @@
+/* GENERAL RESET & LAYOUT */
+html, body, #root, .app-main-container {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  width: 100vw;
+  box-sizing: border-box;
+  font-family: 'Quicksand', 'Nunito', 'Arial', sans-serif;
+  background: linear-gradient(130deg, #FFEC00 0%, #F96FB7 100%);
+}
+
+/* Fixed Navbar */
+.navbar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 72px;
+  background: linear-gradient(130deg, #fff 87%, #9D4BE6 100%);
+  display: flex;
+  align-items: center;
+  box-shadow: 0 2px 18px #9D4BE619;
+  z-index: 999;
+  padding: 0 2vw;
+  border-bottom: 4px solid #9D4BE6;
+}
+.logo {
+  height: 48px;
+  border-radius: 13px;
+  box-shadow: 0 0 16px #F96FB799;
+  margin-right: 26px;
+  transition: box-shadow 0.2s;
+}
+.logo:hover {
+  box-shadow: 0px 0px 30px #1991EB55;
+}
+/* Navbar Links */
+.nav-links {
+  display: flex;
+  gap: 28px;
+}
+.nav-links a {
+  color: #9D4BE6;
+  font-weight: 700;
+  text-decoration: none;
+  font-size: 1.13em;
+  position: relative;
+  transition: color 0.19s;
+  padding: 6px 14px;
+  border-radius: 11px;
+}
+.nav-links a::after {
+  content: "";
+  display: block;
+  width: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #1991EB 0%, #F96FB7 80%);
+  border-radius: 3px;
+  transition: width 0.3s;
+  margin-top: 4px;
+}
+.nav-links a:hover {
+  background: #F4F7FD;
+  color: #1991EB;
+}
+.nav-links a:hover::after {
+  width: 100%;
+}
+
+/* APP HEADER */
+.app-header {
+  text-align: center;
+  margin-bottom: 2.4rem;
+  margin-top: 90px;
+  background: #fff;
+  padding: 22px 10px;
+  border-bottom: 5px solid #9D4BE6;
+  border-radius: 1rem;
+  box-shadow: 0 2px 16px rgba(25,145,235,0.05);
+}
+
+/* CARD LAYOUT */
+.card {
+  background: #fff;
+  border-radius: 1.2rem;
+  box-shadow: 0 2px 18px rgba(153,149,233,0.08);
+  border: 3px solid #9D4BE6;
+  margin-bottom: 2.2rem;
+  padding: 2.2rem 1.7rem;
+  max-width: 98vw;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* INFO BOX */
+.info-box {
+  background: #f4f7fd;
+  border-radius: 1em;
+  padding: 16px 18px;
+  margin-bottom: 22px;
+  color: #1991EB;
+  font-weight: 600;
+  font-size: 1.13rem;
+  border: 2px solid #1991EB;
+  box-shadow: 0 1px 9px rgba(25,145,235,0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* FORM FIELD */
+.field-label {
+  display: block;
+  font-weight: 700;
+  color: #9D4BE6;
+  margin-bottom: 8px;
+  font-size: 1.04rem;
+}
+.field-input {
+  width: 100%;
+  border: 2px solid #E8EDEE;
+  border-radius: 10px;
+  padding: 13px;
+  font-size: 1.07rem;
+  font-family: inherit;
+  font-weight: 600;
+  box-sizing: border-box;
+  background: #fff;
+}
+
+.select-box {
+  padding: 13px;
+  font-size: 1.04rem;
+  border-radius: 10px;
+  border: 2px solid #9D4BE6;
+  background: #fff;
+  width: 100%;
+  margin-bottom: 15px;
+  font-weight: 600;
+  min-width: 120px;
+}
+
+/* BUTTONS */
+.main-btn,
+.btn-animated,
+.login-form button {
+  background: linear-gradient(135deg, #9D4BE6 0%, #1991EB 100%);
+  color: #fff;
+  border: none;
+  border-radius: 13px;
+  padding: 16px 0;
+  font-weight: bold;
+  font-size: 1.15rem;
+  margin-top: 18px;
+  width: 100%;
+  box-shadow: 0 3px 15px rgba(25,145,235,0.16);
+  cursor: pointer;
+  letter-spacing: 0.02em;
+  transition: background 0.3s, box-shadow 0.2s, transform 0.2s;
+}
+.main-btn:hover,
+.btn-animated:hover,
+.login-form button:hover {
+  background: linear-gradient(135deg, #1991EB 0%, #9D4BE6 100%);
+  box-shadow: 0 6px 18px #9D4BE677;
+  transform: translateY(-2px) scale(1.018);
+}
+
+/* Back and Edit Buttons */
+.back-btn, .edit-btn {
+  background: #eee;
+  color: #333;
+  border: none;
+  border-radius: 10px;
+  padding: 8px 16px;
+  cursor: pointer;
+  font-weight: 700;
+  margin-bottom: 8px;
+  margin-right: 10px;
+  display: inline-block;
+  transition: background 0.2s;
+}
+.back-btn:hover, .edit-btn:hover {
+  background: #9D4BE621;
+  color: #9D4BE6;
+}
+
+/* ENTRIES TABLE */
+.entries-table {
+  width: 100%;
+  border-collapse: collapse;
+  box-shadow: 0 2px 15px #1991EB11;
+  margin-bottom: 2em;
+}
+.entries-table th, .entries-table td {
+  text-align: left;
+  padding: 10px 13px;
+  font-size: 1.01rem;
+  border-bottom: 1px solid #dedede;
+}
+.entries-table th {
+  background-color: #f6f7fd;
+  color: #1d2567;
+  font-weight: 700;
+}
+.entries-table tr td:last-child { text-align: center; }
+
+/* LOGIN FORM */
+.login-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(140deg, #FFEC00 0%, #F96FB7 100%);
+  padding-top: 90px;
+}
+.login-form {
+  background: #fff;
+  padding: 2.5em 2em;
+  border-radius: 17px;
+  box-shadow: 0 5px 24px rgba(153,149,233,0.09);
+  border: 3px solid #9D4BE6;
+  width: 98vw;
+  max-width: 340px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+.login-form h2 { color: #9D4BE6; font-weight: 800; }
+.login-form input {
+  border: 2px solid #E8EDEE;
+  border-radius: 10px;
+  font-size: 1.07rem;
+  padding: 14px;
+  font-family: inherit;
+  font-weight: 500;
+}
+.login-form .error { color: #F96FB7; font-size: 1.08em; font-weight: 700; text-align: left; margin-top: 0; }
+
+/* POPUP/SUCCESS BANNER */
+.submitted-popup {
+  position: fixed;
+  top: 90px;
+  right: 20px;
+  background: linear-gradient(135deg, #1991EB 0%, #F96FB7 95%);
+  color: #fff;
+  padding: 16px 24px;
+  border-radius: 13px;
+  box-shadow: 0 4px 22px #1991EB70;
+  font-weight: 800;
+  font-size: 1.16rem;
+  z-index: 9999;
+  animation: fadeIn 0.5s;
+}
+@keyframes fadeIn { from { opacity: 0; right: 0;} to {opacity: 1; right: 20px;} }
+
+/* Footer */
+.app-footer {
+  width: 100vw;
+  text-align: center;
+  padding: 24px 0 16px 0;
+  background: linear-gradient(95deg, #F4F7FD 91%, #F96FB7 100%);
+  font-weight: 600;
+  color: #9D4BE6;
+  font-size: 1.14em;
+  border-top: 2px solid #F96FB7;
+  margin-top: 24px;
+  box-shadow: 0 -2px 18px #1991EB13;
+}
+
+/* RESPONSIVE/MOBILE */
+@media (max-width: 600px) {
+  .navbar { height: 58px; padding: 0 6px; }
+  .logo { height: 34px; margin-right: 14px; }
+  .nav-links { gap: 9px; }
+  .nav-links a { font-size: 0.93em; padding: 3px 8px;}
+  .card, .app-header {
+    width: 98vw !important;
+    max-width: 98vw !important;
+    min-width: unset !important;
+    padding: 5vw 2vw !important;
+    font-size: 0.97em;
+    box-sizing: border-box;
+  }
+  .login-form { padding: 1.1em 0.5em; max-width: 98vw; }
+  .login-container { padding-top: 70px; }
+  .info-box { font-size: 1.02em; }
+  .submitted-popup { top: 70px; }
+}
+
+body, html { overflow-x: hidden; }
