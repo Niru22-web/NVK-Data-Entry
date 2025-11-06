@@ -1,11 +1,15 @@
 import React, { useState, useEffect } from "react";
 import "./app.css";
 
-// Endpoints (adjust ENTRIES_URL if needed)
 const USERS_URL   = "https://sheetdb.io/api/v1/g3j7bkgfvrz4q";
 const CENTERS_URL = "https://sheetdb.io/api/v1/g3j7bkgfvrz4q";
 const ENTRIES_URL = "https://sheetdb.io/api/v1/imirhe608ptj9";
-const SHEET_LOG = "Data Entry Log"; // <--- update if your log sheet has a different name
+const SHEET_LOG = "Data Entry Log"; // change if your tab name is different
+
+function generateUID() {
+  // Random 10-character string
+  return Math.random().toString(36).substr(2, 10) + Date.now().toString().substr(-6);
+}
 
 function Navbar() {
   return (
@@ -61,6 +65,7 @@ function EntriesTable({ entries, onEditClick }) {
     <table className="entries-table">
       <thead>
         <tr>
+          <th>UID</th>
           <th>Timestamp</th>
           <th>Student Name</th>
           <th>Field 1</th>
@@ -73,7 +78,8 @@ function EntriesTable({ entries, onEditClick }) {
       </thead>
       <tbody>
         {entries.map(entry => (
-          <tr key={entry.Timestamp}>
+          <tr key={entry.UID}>
+            <td>{entry.UID}</td>
             <td>{new Date(entry.Timestamp).toLocaleString()}</td>
             <td>{entry["Student Name"]}</td>
             <td>{entry.Field1}</td>
@@ -107,7 +113,7 @@ export default function App() {
   const [studentData, setStudentData] = useState({});
   const [fields, setFields] = useState({ field1: "", field2: "", field3: "", field4: "", field5: "" });
   const [entries, setEntries] = useState([]);
-  const [editingEntryId, setEditingEntryId] = useState(null);
+  const [editingEntry, setEditingEntry] = useState(null); // store full entry for edit
   const [editingFields, setEditingFields] = useState({ Field1: "", Field2: "", Field3: "", Field4: "", Field5: "" });
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -166,14 +172,24 @@ export default function App() {
     }
   }, [selectedStudent, loginCenter, isLoggedIn]);
 
-  // Entries for logged in center
+  // Entries for logged in center, only latest per student
   useEffect(() => {
     if ((mode === "view" || mode === "edit") && loginCenter && isLoggedIn) {
       fetch(`${ENTRIES_URL}?sheet=${encodeURIComponent(SHEET_LOG)}`)
         .then(res => res.json())
         .then(data => {
-          const filteredEntries = data.filter(entry => entry["Center Name"] === loginCenter);
-          setEntries(filteredEntries);
+          // Only show the most recent entry per student (by Timestamp)
+          const filtered = data
+            .filter(e => e["Center Name"] === loginCenter)
+            .reduce((acc, curr) => {
+              const key = curr["Student Name"];
+              // Replace if current newer
+              acc[key] = !acc[key] || new Date(curr.Timestamp) > new Date(acc[key].Timestamp)
+                ? curr
+                : acc[key];
+              return acc;
+            }, {});
+          setEntries(Object.values(filtered));
         })
         .catch(() => setEntries([]));
     } else if (mode === "view" || mode === "edit") {
@@ -181,11 +197,12 @@ export default function App() {
     }
   }, [loginCenter, mode, isLoggedIn]);
 
-  // New entry
+  // New entry (with UID)
   const submitNewEntry = async (e) => {
     e.preventDefault();
     setSubmitting(true);
     const entry = {
+      UID: generateUID(),
       Timestamp: new Date().toISOString(),
       "Center Name": loginCenter,
       "Student Name": selectedStudent,
@@ -216,9 +233,9 @@ export default function App() {
     setSubmitting(false);
   };
 
-  // Edit entry
+  // Edit entry: store the entry to edit
   const startEditEntry = (entry) => {
-    setEditingEntryId(entry.Timestamp);
+    setEditingEntry(entry);
     setEditingFields({
       Field1: entry.Field1 || "",
       Field2: entry.Field2 || "",
@@ -229,21 +246,14 @@ export default function App() {
     setSelectedStudent(entry["Student Name"]);
   };
 
-  // Fix: Always send &sheet=Log with DELETE and POST for edits!
+  // Save edited entry: post new entry with same UID, new Timestamp
   const saveEditedEntry = async () => {
-    if (!editingEntryId) return;
+    if (!editingEntry) return;
     setSubmitting(true);
     try {
-      // 1. Delete previous entry by timestamp
-      const deleteRes = await fetch(
-        `${ENTRIES_URL}/search?Timestamp=${encodeURIComponent(editingEntryId)}&sheet=${encodeURIComponent(SHEET_LOG)}`,
-        { method: "DELETE" }
-      );
-      const deleteResult = await deleteRes.json();
-      console.log("Delete response:", deleteResult);
-      // 2. Add updated entry to log
       const updatedEntry = {
-        Timestamp: editingEntryId,
+        UID: editingEntry.UID,
+        Timestamp: new Date().toISOString(), // new time for update!
         "Center Name": loginCenter,
         "Student Name": selectedStudent,
         Field1: editingFields.Field1,
@@ -258,24 +268,20 @@ export default function App() {
         body: JSON.stringify({ data: [updatedEntry] }),
       });
       if (!addRes.ok) {
-        alert("Failed to add updated entry.");
+        alert("Failed to save entry.");
         setSubmitting(false);
         return;
       }
       alert("Entry updated successfully!");
-      setEditingEntryId(null);
-      // Refresh entries
-      const res = await fetch(`${ENTRIES_URL}?sheet=${encodeURIComponent(SHEET_LOG)}`);
-      const allEntries = await res.json();
-      const filtered = allEntries.filter(e => e["Center Name"] === loginCenter);
-      setEntries(filtered);
+      setEditingEntry(null);
+      // Reload entries (handled by useEffect)
     } catch (error) {
-      alert("Error updating entry: " + error.message);
+      alert("Error saving entry: " + error.message);
     }
     setSubmitting(false);
   };
 
-  // Login Page with logo and background
+  // Login Page
   if (!isLoggedIn) {
     return (
       <>
@@ -307,7 +313,7 @@ export default function App() {
     );
   }
 
-  // Main App with Navigation, Content, and Footer
+  // Main App
   return (
     <>
       <Navbar />
@@ -372,7 +378,7 @@ export default function App() {
         {mode === "edit" && <Card>
           <button onClick={() => setMode("menu")} className="back-btn">← Back to Menu</button>
           <h2 style={{ color: "#9D4BE6", marginBottom: 20 }}>Edit Entries</h2>
-          {!editingEntryId ? (
+          {!editingEntry ? (
             <EntriesTable
               entries={entries}
               onEditClick={startEditEntry}
@@ -386,7 +392,7 @@ export default function App() {
               <FormField id="edit-field4" label="Field 4" value={editingFields.Field4} onChange={e => setEditingFields(f => ({ ...f, Field4: e.target.value }))} />
               <FormField id="edit-field5" label="Field 5" value={editingFields.Field5} onChange={e => setEditingFields(f => ({ ...f, Field5: e.target.value }))} />
               <button onClick={saveEditedEntry} disabled={submitting} className="main-btn btn-animated">Save Changes</button>
-              <button onClick={() => setEditingEntryId(null)} className="back-btn">Cancel</button>
+              <button onClick={() => setEditingEntry(null)} className="back-btn">Cancel</button>
             </>
           )}
         </Card>}
