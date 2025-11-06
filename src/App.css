@@ -1,168 +1,153 @@
-html, body, #root, .app-main-container {
-  width: 100vw !important;
-  min-height: 100vh;
+/* Reset & Base styles */
+body, html {
   margin: 0;
   padding: 0;
+  width: 100vw;
+  min-height: 100vh;
   box-sizing: border-box;
   font-family: 'Quicksand', 'Nunito', 'Arial', sans-serif;
-  background: #f8f8ff;
+  background: linear-gradient(120deg, #FFEC00 0%, #F96FB7 100%);
 }
 
-/* App header */
-.app-header {
-  text-align: center;
-  margin-bottom: 2.4rem;
-  background: #fff;
-  padding: 18px;
-  border-bottom: 5px solid #9D4BE6;
-  border-radius: 1rem;
+/* Fixed Navbar */
+.navbar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 72px;
+  background: linear-gradient(130deg, #fff 87%, #9D4BE6 100%);
+  display: flex;
+  align-items: center;
+  box-shadow: 0 2px 18px #9D4BE619;
+  z-index: 999;
+  padding: 0 2vw;
+  border-bottom: 4px solid #9D4BE6;
+}
+.logo {
+  height: 48px;
+  border-radius: 13px;
+  box-shadow: 0 0 16px #F96FB799;
+  margin-right: 26px;
+  transition: box-shadow 0.2s;
+}
+.logo:hover {
+  box-shadow: 0px 0px 30px #1991EB55;
+}
+/* Navbar Links */
+.nav-links {
+  display: flex;
+  gap: 28px;
+}
+.nav-links a {
+  color: #9D4BE6;
+  font-weight: 700;
+  text-decoration: none;
+  font-size: 1.13em;
+  position: relative;
+  transition: color 0.19s;
+  padding: 6px 14px;
+  border-radius: 11px;
+}
+/* Animated underline on hover */
+.nav-links a::after {
+  content: "";
+  display: block;
+  width: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #1991EB 0%, #F96FB7 80%);
+  border-radius: 3px;
+  transition: width 0.3s;
+  margin-top: 4px;
+}
+.nav-links a:hover {
+  background: #F4F7FD;
+  color: #1991EB;
+}
+.nav-links a:hover::after {
+  width: 100%;
 }
 
-/* Card styling */
+/* Main Content Card */
+.main-content {
+  min-height: calc(100vh - 160px);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 2vw;
+}
 .card {
   background: #fff;
-  border-radius: 1.2rem;
-  box-shadow: 0 2px 18px rgba(153,149,233,0.08);
+  border-radius: 1.3rem;
+  box-shadow: 0 2px 18px #9D4BE60d;
   border: 3px solid #9D4BE6;
-  margin-bottom: 2.2rem;
-  padding: 2.2rem 1.7rem;
-  max-width: 98vw;
-  margin-left: auto;
-  margin-right: auto;
+  margin-top: 1.1em;
+  padding: 2.3em 2em;
+  max-width: 420px;
+  width: 98vw;
+  text-align: center;
 }
 
-.info-box {
-  background: #f4f7fd;
-  border-radius: 1em;
-  padding: 16px 18px;
-  margin-bottom: 22px;
-  color: #1991EB;
-  font-weight: 600;
-  font-size: 1.13rem;
-  border: 2px solid #1991EB;
-  box-shadow: 0 1px 9px rgba(25,145,235,0.05);
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.field-label {
-  display: block;
-  font-weight: 700;
-  color: #9D4BE6;
-  margin-bottom: 8px;
-  font-size: 1.04rem;
-}
-.field-input {
-  width: 100%;
-  border: 2px solid #E8EDEE;
-  border-radius: 10px;
-  padding: 12px;
-  font-size: 1.13rem;
-  font-family: inherit;
-  font-weight: 600;
-}
-
-/* Buttons */
-.main-btn {
+/* Animated Attractive Buttons */
+.btn-animated,
+.btn {
   background: linear-gradient(135deg, #9D4BE6 0%, #1991EB 100%);
   color: #fff;
   border: none;
-  border-radius: 12px;
-  padding: 14px 0;
-  font-weight: bold;
-  font-size: 1.1rem;
-  margin-top: 15px;
-  width: 100%;
+  border-radius: 13px;
+  padding: 16px 0;
+  font-weight: 800;
+  font-size: 1.18rem;
+  margin-top: 20px;
+  width: 80%;
+  box-shadow: 0 3px 16px #1991EB44;
+  letter-spacing:0.03em;
   cursor: pointer;
-  box-shadow: 0 3px 15px rgba(0,0,0,0.10);
-  transition: background 0.3s;
+  transition: background 0.38s, transform 0.19s, box-shadow 0.18s;
+  outline: none;
+  border-bottom: 4px solid #F96FB7;
 }
-.back-btn {
-  background: #eee;
-  color: #333;
-  border: none;
-  border-radius: 10px;
-  padding: 8px 16px;
-  cursor: pointer;
-  font-weight: 600;
-  margin-bottom: 14px;
-  display: inline-block;
+.btn-animated:hover,
+.btn:hover {
+  background: linear-gradient(135deg, #1991EB 0%, #F96FB7 100%);
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 7px 21px #9D4BE668;
 }
-.edit-btn {
-  cursor: pointer;
-  background-color: #9D4BE6;
-  border: none;
-  color: white;
-  padding: 6px 10px;
-  border-radius: 8px;
-  font-weight: 600;
-}
-
-/* Select box styling */
-.select-box {
-  padding: 12px;
-  font-size: 1.04rem;
-  border-radius: 10px;
+.btn-light {
+  background: #f4f7fd;
+  color: #9D4BE6;
   border: 2px solid #9D4BE6;
-  background: #fff;
-  width: 100%;
-  margin-bottom: 15px;
-  font-weight: 600;
-}
-
-/* Table */
-.entries-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-.entries-table th, .entries-table td {
-  text-align: left;
-  padding: 8px 15px;
-  font-size: 0.92rem;
-  border-bottom: 1px solid #ccc;
-}
-
-/* Popup banner */
-.submitted-popup {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  background-color: #1991EB;
-  color: #fff;
-  padding: 14px 22px;
-  border-radius: 12px;
-  box-shadow: 0 3px 15px rgba(0,0,0,0.25);
   font-weight: 700;
-  font-size: 1.1rem;
-  z-index: 1000;
+  border-bottom: 2px solid #F96FB7;
+}
+.btn-light:hover {
+  background: #F96FB7;
+  color: #fff;
+  border-color: #9D4BE6;
 }
 
-/* Logo */
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
+/* Footer */
+.app-footer {
+  width: 100vw;
+  text-align: center;
+  padding: 24px 0 16px 0;
+  background: linear-gradient(95deg, #F4F7FD 91%, #F96FB7 100%);
+  font-weight: 600;
+  color: #9D4BE6;
+  font-size: 1.14em;
+  border-top: 2px solid #F96FB7;
+  margin-top: 24px;
+  box-shadow: 0 -2px 18px #1991EB13;
 }
 
-/* Responsive tweaks */
+/* Responsive/Mobile */
 @media (max-width: 600px) {
-  .card {
-    width: 98vw !important;
-    max-width: 98vw !important;
-    min-width: unset !important;
-    padding: 5vw 2vw !important;
-    font-size: 0.98em;
-    box-sizing: border-box;
-  }
-  .logo { height: 3.2em; padding: 1em;}
-  .app-header { padding: 1vw; }
+  .navbar { height: 58px; padding: 0 6px; }
+  .logo { height: 34px; margin-right: 14px; }
+  .nav-links { gap: 9px; }
+  .nav-links a { font-size: 0.93em; padding: 3px 8px;}
+  .main-content {padding: 3vw; }
+  .card {padding: 1.3em 0.7em; max-width: 99vw;}
+  .btn-animated, .btn, .btn-light {width: 96%;}
+  .app-footer {font-size: 1em; padding: 14px 0 10px 0;}
 }
 
-/* Optional: Hide horizontal scrollbars on small screens */
-body, html {
-  overflow-x: hidden;
-}
+body { overflow-x: hidden; }
