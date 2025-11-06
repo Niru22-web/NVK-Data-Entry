@@ -47,8 +47,11 @@ function InfoBox({ center, student, agreementDate, birthDate }) {
     <div className="info-box">
       <div><strong>Center Name:</strong> {center}</div>
       <div><strong>Student Name:</strong> {student}</div>
-      <div><strong>Agreement Date:</strong> {agreementDate}</div>
-      <div><strong>Birth Date:</strong> {birthDate}</div>
+      <div><strong>Date of Birth:</strong> {Date of Birth}</div>
+      <div><strong>Enroll Date:</strong> {Enroll Date}</div>
+      <div><strong>Start Date:</strong> {Start Date}</div>
+      <div><strong>Billing Cycle:</strong> {Billing Cycle}</div>
+      <div><strong>Classroom:</strong> {Classroom}</div>
     </div>
   );
 }
