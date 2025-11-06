@@ -174,7 +174,7 @@ export default function App() {
         .then(res => res.json())
         .then(data => {
           const filtered = data
-            .filter(e => e["Center Name"] === loginCenter)
+            .filter(e => e["Center Name"] === loginCente && e.Username === loginUser))
             .reduce((acc, curr) => {
               const key = curr["Student Name"];
               acc[key] = !acc[key] || new Date(curr.Timestamp) > new Date(acc[key].Timestamp)
@@ -197,6 +197,7 @@ export default function App() {
       UID: generateUID(),
       Timestamp: new Date().toISOString(),
       "Center Name": loginCenter,
+          Username: loginUser,
       "Student Name": selectedStudent,
       Field1: fields.field1,
       Field2: fields.field2,
@@ -245,6 +246,7 @@ export default function App() {
         UID: editingEntry.UID,
         Timestamp: new Date().toISOString(),
         "Center Name": loginCenter,
+                Username: loginUser,
         "Student Name": selectedStudent,
         Field1: editingFields.Field1,
         Field2: editingFields.Field2,
