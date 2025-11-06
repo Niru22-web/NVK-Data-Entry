@@ -3,8 +3,7 @@ import "./app.css";
 
 const USERS_URL   = "https://sheetdb.io/api/v1/g3j7bkgfvrz4q";
 const CENTERS_URL = "https://sheetdb.io/api/v1/g3j7bkgfvrz4q";
-const ENTRIES_URL = "https://sheetdb.io/api/v1/imirhe608ptj9";
-const SHEET_LOG = "Data Entry Log"; // change if your tab name is different
+const ENTRIES_URL = "https://sheetdb.io/api/v1/g3j7bkgfvrz4q";const SHEET_LOG = "Data Entry Log"; // change if your tab name is different
 
 function generateUID() {
   // Random 10-character string
