@@ -113,12 +113,11 @@ export default function App() {
   const [studentData, setStudentData] = useState({});
   const [fields, setFields] = useState({ field1: "", field2: "", field3: "", field4: "", field5: "" });
   const [entries, setEntries] = useState([]);
-  const [editingEntry, setEditingEntry] = useState(null); // store full entry for edit
+  const [editingEntry, setEditingEntry] = useState(null);
   const [editingFields, setEditingFields] = useState({ Field1: "", Field2: "", Field3: "", Field4: "", Field5: "" });
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
-  // Login: append &sheet=Users for every search call
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoginError("");
@@ -144,7 +143,6 @@ export default function App() {
     }
   };
 
-  // Students for logged-in center
   useEffect(() => {
     if (isLoggedIn) {
       fetch(CENTERS_URL)
@@ -156,7 +154,6 @@ export default function App() {
     }
   }, [isLoggedIn, loginCenter]);
 
-  // Student data
   useEffect(() => {
     if (selectedStudent && loginCenter && isLoggedIn) {
       fetch(CENTERS_URL)
@@ -172,18 +169,15 @@ export default function App() {
     }
   }, [selectedStudent, loginCenter, isLoggedIn]);
 
-  // Entries for logged in center, only latest per student
   useEffect(() => {
     if ((mode === "view" || mode === "edit") && loginCenter && isLoggedIn) {
       fetch(`${ENTRIES_URL}?sheet=${encodeURIComponent(SHEET_LOG)}`)
         .then(res => res.json())
         .then(data => {
-          // Only show the most recent entry per student (by Timestamp)
           const filtered = data
             .filter(e => e["Center Name"] === loginCenter)
             .reduce((acc, curr) => {
               const key = curr["Student Name"];
-              // Replace if current newer
               acc[key] = !acc[key] || new Date(curr.Timestamp) > new Date(acc[key].Timestamp)
                 ? curr
                 : acc[key];
@@ -197,7 +191,6 @@ export default function App() {
     }
   }, [loginCenter, mode, isLoggedIn]);
 
-  // New entry (with UID)
   const submitNewEntry = async (e) => {
     e.preventDefault();
     setSubmitting(true);
@@ -233,7 +226,6 @@ export default function App() {
     setSubmitting(false);
   };
 
-  // Edit entry: store the entry to edit
   const startEditEntry = (entry) => {
     setEditingEntry(entry);
     setEditingFields({
@@ -246,14 +238,13 @@ export default function App() {
     setSelectedStudent(entry["Student Name"]);
   };
 
-  // Save edited entry: post new entry with same UID, new Timestamp
   const saveEditedEntry = async () => {
     if (!editingEntry) return;
     setSubmitting(true);
     try {
       const updatedEntry = {
         UID: editingEntry.UID,
-        Timestamp: new Date().toISOString(), // new time for update!
+        Timestamp: new Date().toISOString(),
         "Center Name": loginCenter,
         "Student Name": selectedStudent,
         Field1: editingFields.Field1,
@@ -274,14 +265,12 @@ export default function App() {
       }
       alert("Entry updated successfully!");
       setEditingEntry(null);
-      // Reload entries (handled by useEffect)
     } catch (error) {
       alert("Error saving entry: " + error.message);
     }
     setSubmitting(false);
   };
 
-  // Login Page
   if (!isLoggedIn) {
     return (
       <>
@@ -313,7 +302,6 @@ export default function App() {
     );
   }
 
-  // Main App
   return (
     <>
       <Navbar />
