@@ -174,7 +174,7 @@ export default function App() {
         .then(res => res.json())
         .then(data => {
           const filtered = data
-            .filter(e => e["Center Name"] === loginCente && e.Username === loginUser))
+            .filter(e => e["Center Name"] === loginCenter && e.Username === loginUser)
             .reduce((acc, curr) => {
               const key = curr["Student Name"];
               acc[key] = !acc[key] || new Date(curr.Timestamp) > new Date(acc[key].Timestamp)
