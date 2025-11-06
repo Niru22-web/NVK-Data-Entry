@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from "react";
 import "./app.css";
 
-// SheetDB endpoints
-const USERS_URL = "https://sheetdb.io/api/v1/g3j7bkgfvrz4q";
+// Endpoints (adjust ENTRIES_URL if needed)
+const USERS_URL   = "https://sheetdb.io/api/v1/g3j7bkgfvrz4q";
 const CENTERS_URL = "https://sheetdb.io/api/v1/g3j7bkgfvrz4q";
 const ENTRIES_URL = "https://sheetdb.io/api/v1/imirhe608ptj9";
+const SHEET_LOG = "Data Entry Log"; // <--- update if your log sheet has a different name
 
-// Navbar and Footer Components
 function Navbar() {
   return (
     <nav className="navbar">
@@ -26,9 +26,9 @@ function Footer() {
     </footer>
   );
 }
-
-// Helper UI Components
-function Card({ children }) { return <div className="card">{children}</div>; }
+function Card({ children }) {
+  return <div className="card">{children}</div>;
+}
 function FormField({ label, value, onChange, id }) {
   return (
     <div style={{ marginBottom: 20 }}>
@@ -109,11 +109,10 @@ export default function App() {
   const [entries, setEntries] = useState([]);
   const [editingEntryId, setEditingEntryId] = useState(null);
   const [editingFields, setEditingFields] = useState({ Field1: "", Field2: "", Field3: "", Field4: "", Field5: "" });
-  const [editingStudent, setEditingStudent] = useState(""); // NEW: track student in edit mode
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
-  // Login with &sheet=Users on every search
+  // Login: append &sheet=Users for every search call
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoginError("");
@@ -122,9 +121,15 @@ export default function App() {
       const res = await fetch(url);
       if (!res.ok) throw new Error("SheetDB error");
       const users = await res.json();
-      if (Array.isArray(users) && users.length === 1) {
+      if (!Array.isArray(users)) {
+        setLoginError("ERROR: SheetDB endpoint/sheet names/headers may be wrong.");
+        return;
+      }
+      if (users.length === 1) {
         setIsLoggedIn(true);
         setLoginCenter(users[0]["Center Name"]);
+      } else if (users.length > 1) {
+        setLoginError("Multiple users found. Check for duplicate usernames.");
       } else {
         setLoginError("Invalid username or password.");
       }
@@ -133,7 +138,7 @@ export default function App() {
     }
   };
 
-  // Fetch students for current center
+  // Students for logged-in center
   useEffect(() => {
     if (isLoggedIn) {
       fetch(CENTERS_URL)
@@ -145,7 +150,7 @@ export default function App() {
     }
   }, [isLoggedIn, loginCenter]);
 
-  // Display selected student's data
+  // Student data
   useEffect(() => {
     if (selectedStudent && loginCenter && isLoggedIn) {
       fetch(CENTERS_URL)
@@ -161,10 +166,10 @@ export default function App() {
     }
   }, [selectedStudent, loginCenter, isLoggedIn]);
 
-  // Fetch entries for view/edit
+  // Entries for logged in center
   useEffect(() => {
     if ((mode === "view" || mode === "edit") && loginCenter && isLoggedIn) {
-      fetch(ENTRIES_URL)
+      fetch(`${ENTRIES_URL}?sheet=${encodeURIComponent(SHEET_LOG)}`)
         .then(res => res.json())
         .then(data => {
           const filteredEntries = data.filter(entry => entry["Center Name"] === loginCenter);
@@ -176,7 +181,7 @@ export default function App() {
     }
   }, [loginCenter, mode, isLoggedIn]);
 
-  // Submit new entry
+  // New entry
   const submitNewEntry = async (e) => {
     e.preventDefault();
     setSubmitting(true);
@@ -191,7 +196,7 @@ export default function App() {
       Field5: fields.field5,
     };
     try {
-      const res = await fetch(ENTRIES_URL, {
+      const res = await fetch(`${ENTRIES_URL}?sheet=${encodeURIComponent(SHEET_LOG)}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ data: [entry] }),
@@ -211,7 +216,7 @@ export default function App() {
     setSubmitting(false);
   };
 
-  // Edit workflow
+  // Edit entry
   const startEditEntry = (entry) => {
     setEditingEntryId(entry.Timestamp);
     setEditingFields({
@@ -221,35 +226,33 @@ export default function App() {
       Field4: entry.Field4 || "",
       Field5: entry.Field5 || ""
     });
-    setEditingStudent(entry["Student Name"]); // EDITING: always show current student name
+    setSelectedStudent(entry["Student Name"]);
   };
 
+  // Fix: Always send &sheet=Log with DELETE and POST for edits!
   const saveEditedEntry = async () => {
     if (!editingEntryId) return;
     setSubmitting(true);
     try {
       // 1. Delete previous entry by timestamp
       const deleteRes = await fetch(
-        `${ENTRIES_URL}/search?Timestamp=${encodeURIComponent(editingEntryId)}`,
+        `${ENTRIES_URL}/search?Timestamp=${encodeURIComponent(editingEntryId)}&sheet=${encodeURIComponent(SHEET_LOG)}`,
         { method: "DELETE" }
       );
-      if (!deleteRes.ok) {
-        alert("Failed to delete existing entry.");
-        setSubmitting(false);
-        return;
-      }
-      // 2. Add updated entry, retaining original Timestamp and Student Name!
+      const deleteResult = await deleteRes.json();
+      console.log("Delete response:", deleteResult);
+      // 2. Add updated entry to log
       const updatedEntry = {
         Timestamp: editingEntryId,
         "Center Name": loginCenter,
-        "Student Name": editingStudent, // always persist!
+        "Student Name": selectedStudent,
         Field1: editingFields.Field1,
         Field2: editingFields.Field2,
         Field3: editingFields.Field3,
         Field4: editingFields.Field4,
         Field5: editingFields.Field5,
       };
-      const addRes = await fetch(ENTRIES_URL, {
+      const addRes = await fetch(`${ENTRIES_URL}?sheet=${encodeURIComponent(SHEET_LOG)}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ data: [updatedEntry] }),
@@ -259,25 +262,20 @@ export default function App() {
         setSubmitting(false);
         return;
       }
+      alert("Entry updated successfully!");
       setEditingEntryId(null);
-      setEditingFields({ Field1: "", Field2: "", Field3: "", Field4: "", Field5: "" });
-      setEditingStudent(""); // Clean up edit state
-
-      // Refresh entries from the server for this center
-      const res = await fetch(ENTRIES_URL);
+      // Refresh entries
+      const res = await fetch(`${ENTRIES_URL}?sheet=${encodeURIComponent(SHEET_LOG)}`);
       const allEntries = await res.json();
       const filtered = allEntries.filter(e => e["Center Name"] === loginCenter);
       setEntries(filtered);
-
-      setSubmitted(true);
-      setTimeout(() => setSubmitted(false), 2000);
     } catch (error) {
       alert("Error updating entry: " + error.message);
     }
     setSubmitting(false);
   };
 
-  // Login Page
+  // Login Page with logo and background
   if (!isLoggedIn) {
     return (
       <>
@@ -309,7 +307,7 @@ export default function App() {
     );
   }
 
-  // Main App
+  // Main App with Navigation, Content, and Footer
   return (
     <>
       <Navbar />
@@ -371,14 +369,8 @@ export default function App() {
           <h2 style={{ color: "#9D4BE6", marginBottom: 20 }}>View Data Entered</h2>
           <EntriesTable entries={entries} />
         </Card>}
-
         {mode === "edit" && <Card>
-          <button onClick={() => {
-            setEditingEntryId(null);
-            setEditingFields({ Field1: "", Field2: "", Field3: "", Field4: "", Field5: "" });
-            setEditingStudent("");
-            setMode("menu");
-          }} className="back-btn">← Back to Menu</button>
+          <button onClick={() => setMode("menu")} className="back-btn">← Back to Menu</button>
           <h2 style={{ color: "#9D4BE6", marginBottom: 20 }}>Edit Entries</h2>
           {!editingEntryId ? (
             <EntriesTable
@@ -387,48 +379,18 @@ export default function App() {
             />
           ) : (
             <>
-              <h4>Editing: {editingStudent}</h4>
-              {/* Show editing student as label */}
-              <FormField
-                id="edit-field1"
-                label="Field 1"
-                value={editingFields.Field1}
-                onChange={e => setEditingFields(f => ({ ...f, Field1: e.target.value }))}
-              />
-              <FormField
-                id="edit-field2"
-                label="Field 2"
-                value={editingFields.Field2}
-                onChange={e => setEditingFields(f => ({ ...f, Field2: e.target.value }))}
-              />
-              <FormField
-                id="edit-field3"
-                label="Field 3"
-                value={editingFields.Field3}
-                onChange={e => setEditingFields(f => ({ ...f, Field3: e.target.value }))}
-              />
-              <FormField
-                id="edit-field4"
-                label="Field 4"
-                value={editingFields.Field4}
-                onChange={e => setEditingFields(f => ({ ...f, Field4: e.target.value }))}
-              />
-              <FormField
-                id="edit-field5"
-                label="Field 5"
-                value={editingFields.Field5}
-                onChange={e => setEditingFields(f => ({ ...f, Field5: e.target.value }))}
-              />
+              <h4>Editing: {selectedStudent}</h4>
+              <FormField id="edit-field1" label="Field 1" value={editingFields.Field1} onChange={e => setEditingFields(f => ({ ...f, Field1: e.target.value }))} />
+              <FormField id="edit-field2" label="Field 2" value={editingFields.Field2} onChange={e => setEditingFields(f => ({ ...f, Field2: e.target.value }))} />
+              <FormField id="edit-field3" label="Field 3" value={editingFields.Field3} onChange={e => setEditingFields(f => ({ ...f, Field3: e.target.value }))} />
+              <FormField id="edit-field4" label="Field 4" value={editingFields.Field4} onChange={e => setEditingFields(f => ({ ...f, Field4: e.target.value }))} />
+              <FormField id="edit-field5" label="Field 5" value={editingFields.Field5} onChange={e => setEditingFields(f => ({ ...f, Field5: e.target.value }))} />
               <button onClick={saveEditedEntry} disabled={submitting} className="main-btn btn-animated">Save Changes</button>
-              <button onClick={() => {
-                setEditingEntryId(null);
-                setEditingFields({ Field1: "", Field2: "", Field3: "", Field4: "", Field5: "" });
-                setEditingStudent("");
-              }} className="back-btn">Cancel</button>
+              <button onClick={() => setEditingEntryId(null)} className="back-btn">Cancel</button>
             </>
           )}
         </Card>}
-        {submitted && <div className="submitted-popup">✅ Entry Saved!</div>}
+        {submitted && <div className="submitted-popup">✅ Entry Submitted!</div>}
       </div>
       <Footer />
     </>
