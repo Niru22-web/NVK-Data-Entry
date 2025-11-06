@@ -42,7 +42,7 @@ function FormField({ label, value, onChange, id }) {
   );
 }
 
-function InfoBox({ center, student, agreementDate, birthDate }) {
+function InfoBox({ center, student, Date of Birth, Start Date, Billing Cycle, Classroom}) {
   return (
     <div className="info-box">
       <div><strong>Center Name:</strong> {center}</div>
