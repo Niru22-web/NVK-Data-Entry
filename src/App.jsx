@@ -151,7 +151,7 @@ export default function App() {
     e.preventDefault();
     setLoginError("");
     try {
-      const url = ${BASE_URL}/search?Username=${encodeURIComponent(loginUser)}&Password=${encodeURIComponent(loginPass)}&sheet=${USERS_SHEET};
+      const url = `${BASE_URL}/search?Username=${encodeURIComponent(loginUser)}&Password=${encodeURIComponent(loginPass)}&sheet=${USERS_SHEET}`;
       const res = await fetch(url);
       if (!res.ok) throw new Error("SheetDB error");
       const users = await res.json();
