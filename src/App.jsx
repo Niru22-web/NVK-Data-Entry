@@ -148,7 +148,7 @@ export default function App() {
 
   // ---- LOGIN ----
   const handleLogin = async (e) => {
-    e.preventDefault();;
+    e.preventDefault();
     setLoginError("");
     try {
       const url = ${BASE_URL}/search?Username=${encodeURIComponent(loginUser)}&Password=${encodeURIComponent(loginPass)}&sheet=${USERS_SHEET};
